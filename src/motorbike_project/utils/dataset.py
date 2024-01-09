@@ -5,11 +5,11 @@ from torchvision import transforms as T
 from torch.utils.data import Dataset
 import numpy as np
 
-import mortobike_project as mp
+import motorbike_project as mp
 
 
 class MotorBikeDataset(Dataset):
-    def __init__(self, config_path: str, session: str = 'train', data_mode: str = 'csv', **kwargs):
+    def __init__(self, config_path: str, session: str = 'train', data_mode: str = 'ssl', **kwargs):
         """
             In this class, there are two data mode to choose from:
             - `csv`: You need to provide a folder containing the images, and a csv file containing the labels
@@ -66,7 +66,7 @@ class MotorBikeDataset(Dataset):
                 for folder_class in self.classes:
                     for img in os.listdir(os.path.join(folder, folder_class)):
                         img_path = os.path.join(folder, folder_class, img)
-                        self.labels[img_path] = int(folder_class) if folder_class in ('1', '2') else 3
+                        self.labels[img_path] = int(folder_class) - 1 if folder_class in ('1', '2') else 2
 
     def __len__(self):
         return len(self.labels)

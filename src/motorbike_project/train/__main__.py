@@ -11,7 +11,7 @@ import argparse
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', type=str, default='swinv2',
+parser.add_argument('--model', type=str, default='vit',
                     help='model name')
 parser.add_argument('--name', type=str, default=None,
                     help='name of the experiment')
@@ -32,7 +32,8 @@ parser.add_argument('--wandb_key', '-wk', type=str,
 args = parser.parse_args()
 
 
-def train(args, model_name, data_mode='ssl', folder_paths: list = None):
+def train(args, data_mode='ssl', folder_paths: list = None):
+    model_name = args.model
     pl.seed_everything(args.seed, workers=True)
 
     # Wandb (Optional)
@@ -135,9 +136,8 @@ def train(args, model_name, data_mode='ssl', folder_paths: list = None):
 
 
 if __name__ == '__main__':
-    model_name = 'vit'
-    # data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
-    data_path = '/workspace/quan/motor'
+    data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
+    # data_path = '/workspace/quan/motor'
     folder_paths = [os.path.join(data_path, x) for x in ('test', 'train', 'val')]
     print(f"==>> folder_paths: {folder_paths}")
-    train(args, model_name, data_mode='ssl', folder_paths=folder_paths)
+    train(args, data_mode='ssl', folder_paths=folder_paths)

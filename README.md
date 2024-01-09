@@ -1,17 +1,7 @@
 # Motocycle-Detection-BKAI
 
-This project is used for multi-class motorcycle detection
+# Train
 
-Mapping some command from linux to MINIX 3
-
-1. `ls` -> `ls`
-
-2. `cd` -> `cd`
-
-3. `pwd` -> `pwd`
-
-4. `mkdir` -> `mkdir`
-
-5. `rmdir` -> `rmdir`
-
-6.
+```bash
+python -m motorbike_project.train --model vit --batch_size 64 -w -wk <your_wandb_key>
+```

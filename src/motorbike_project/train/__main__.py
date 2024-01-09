@@ -136,7 +136,8 @@ def train(args, model_name, data_mode='ssl', folder_paths: list = None):
 
 if __name__ == '__main__':
     model_name = 'vit'
-    data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
+    # data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
+    data_path = '/workspace/quan/motor'
     folder_paths = [os.path.join(data_path, x) for x in ('test', 'train', 'val')]
     print(f"==>> folder_paths: {folder_paths}")
     train(args, model_name, data_mode='ssl', folder_paths=folder_paths)

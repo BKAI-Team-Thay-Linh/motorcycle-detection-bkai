@@ -12,6 +12,8 @@ class MotorBikeModel(pl.LightningModule):
 
         if model == 'resnet152':
             self.model = mp.ResNet152(num_classes=num_classes)
+        elif model == 'vit':
+            self.model = mp.VisionTransformer(num_classes=num_classes)
 
         # TODO: Add more models here if you want
 

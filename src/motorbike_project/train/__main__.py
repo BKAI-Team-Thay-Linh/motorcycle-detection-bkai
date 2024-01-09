@@ -135,7 +135,7 @@ def train(args, model_name, data_mode='ssl', folder_paths: list = None):
 
 
 if __name__ == '__main__':
-    model_name = 'resnet152'
+    model_name = 'vit'
     data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
     folder_paths = [os.path.join(data_path, x) for x in ('test', 'train', 'val')]
     print(f"==>> folder_paths: {folder_paths}")

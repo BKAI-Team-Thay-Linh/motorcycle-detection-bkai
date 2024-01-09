@@ -54,7 +54,7 @@ def train(args, model_name, data_mode='ssl', folder_paths: list = None):
     train_dataset = mp.MotorBikeDataset(
         config_path='src/motorbike_project/config',
         session='train',
-        data_mode='ssl',
+        data_mode=data_mode,
         folder_paths=folder_paths
     )
 
@@ -67,7 +67,7 @@ def train(args, model_name, data_mode='ssl', folder_paths: list = None):
     test_dataset = mp.MotorBikeDataset(
         config_path='src/motorbike_project/config',
         session='test',
-        data_mode='ssl',
+        data_mode=data_mode,
         folder_paths=folder_paths
     )
 

@@ -53,7 +53,7 @@ class MotorBikeModel(pl.LightningModule):
 
         self.train_loss.update(loss.item(), batch[0].shape[0])
         self.train_acc.update(acc.item(), batch[0].shape[0])
-        self.train_f1.update(f1, batch[0].shape[0])
+        # self.train_f1.update(f1, batch[0].shape[0])
 
         return loss
 
@@ -62,17 +62,13 @@ class MotorBikeModel(pl.LightningModule):
 
         self.val_loss.update(loss.item(), batch[0].shape[0])
         self.val_acc.update(acc.item(), batch[0].shape[0])
-        self.val_f1.update(f1, batch[0].shape[0])
+        # self.val_f1.update(f1, batch[0].shape[0])
 
         return loss
 
     def on_train_epoch_end(self):
         self.log("train_loss", self.train_loss(), sync_dist=True)
         self.log("train_acc", self.train_acc(), sync_dist=True)
-
-        print(f'Train loss: {self.train_loss()}')
-        print(f'Train acc: {self.train_acc()}')
-
         # self.log("train_f1", self.train_f1(), sync_dist=True)
 
         self.train_loss.reset()
@@ -82,9 +78,6 @@ class MotorBikeModel(pl.LightningModule):
     def on_validation_epoch_end(self):
         self.log("val_loss", self.val_loss(), sync_dist=True)
         self.log("val_acc", self.val_acc(), sync_dist=True)
-
-        print(f'Val loss: {self.val_loss()}')
-        print(f'Val acc: {self.val_acc()}')
         # self.log("val_f1", self.val_f1(), sync_dist=True)
 
         self.val_loss.reset()

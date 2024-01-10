@@ -9,7 +9,7 @@ class Transform:
         if session == 'train':
             self.aug = A.Compose(
                 [
-                    A.Resize(112, 112, interpolation=cv2.INTER_LINEAR),
+                    A.Resize(224, 224, interpolation=cv2.INTER_LINEAR),
                     A.VerticalFlip(p=0.3),
                     A.HorizontalFlip(p=0.3),
                     A.RGBShift(p=0.3),
@@ -27,7 +27,7 @@ class Transform:
         else:
             self.aug = A.Compose(
                 [
-                    A.Resize(112, 112, interpolation=cv2.INTER_LINEAR),
+                    A.Resize(224, 224, interpolation=cv2.INTER_LINEAR),
                     A.Normalize(),
                     ToTensorV2()
                 ]

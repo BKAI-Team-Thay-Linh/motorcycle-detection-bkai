@@ -7,7 +7,7 @@ from sklearn.metrics import f1_score, accuracy_score
 
 
 class MotorBikeModel(pl.LightningModule):
-    def __init__(self, model: str = 'resnet152', num_classes: int = 3, lr: float = 2e-4):
+    def __init__(self, model: str = 'resnet152', num_classes: int = 3, lr: float = 1e-4):
         super().__init__()
 
         if model == 'resnet152':

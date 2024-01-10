@@ -138,8 +138,8 @@ def train(args, data_mode='ssl', folder_paths: list = None):
 
 
 if __name__ == '__main__':
-    data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
-    # data_path = args.folder_path
+    # data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
+    data_path = args.folder_path
     folder_paths = [os.path.join(data_path, x) for x in ('test', 'train', 'val')]
     print(f"==>> folder_paths: {folder_paths}")
     train(args, data_mode='ssl', folder_paths=folder_paths)

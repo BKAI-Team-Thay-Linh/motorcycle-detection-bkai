@@ -40,12 +40,7 @@ class MotorBikeModel(pl.LightningModule):
         x, y = batch
         y_hat = self(x)
 
-        # Convert the y_hat from probability to class
-        y_hat_float = torch.argmax(y_hat, dim=1).float()
-        y_float = y.float()
-
-        loss = self.loss(y_hat_float, y_float)
-        loss.requires_grad = True
+        loss = self.loss(y_hat, y)
 
         with torch.no_grad():  # No need to calculate gradient here
             acc = (y_hat.argmax(dim=1) == y).float().mean()
@@ -74,20 +69,27 @@ class MotorBikeModel(pl.LightningModule):
     def on_train_epoch_end(self):
         self.log("train_loss", self.train_loss(), sync_dist=True)
         self.log("train_acc", self.train_acc(), sync_dist=True)
+
+        print(f'Train loss: {self.train_loss()}')
+        print(f'Train acc: {self.train_acc()}')
+
         # self.log("train_f1", self.train_f1(), sync_dist=True)
 
         self.train_loss.reset()
         self.train_acc.reset()
-        self.train_f1.reset()
+        # self.train_f1.reset()
 
     def on_validation_epoch_end(self):
         self.log("val_loss", self.val_loss(), sync_dist=True)
         self.log("val_acc", self.val_acc(), sync_dist=True)
+
+        print(f'Val loss: {self.val_loss()}')
+        print(f'Val acc: {self.val_acc()}')
         # self.log("val_f1", self.val_f1(), sync_dist=True)
 
         self.val_loss.reset()
         self.val_acc.reset()
-        self.val_f1.reset()
+        # self.val_f1.reset()
 
     def test_step(self, batch, batch_idx):
         loss, acc, f1 = self._cal_loss_and_acc(batch)

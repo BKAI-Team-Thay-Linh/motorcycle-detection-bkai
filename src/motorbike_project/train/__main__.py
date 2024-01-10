@@ -17,9 +17,11 @@ parser.add_argument('--name', type=str, default=None,
                     help='name of the experiment')
 parser.add_argument('--max_epochs', '-me', type=int, default=20,
                     help='max epoch')
+parser.add_argument('--folder_path', '-fp', type=str, default='/workspace/quan/motor',
+                    help='folder path')
 parser.add_argument('--batch_size', '-bs', type=int, default=64,
                     help='batch size')
-parser.add_argument('--lr', '-l', type=float, default=1e-4,
+parser.add_argument('--lr', '-l', type=float, default=2e-4,
                     help='learning rate')
 parser.add_argument('--num_workers', '-nw', type=int, default=0,
                     help='number of workers')
@@ -137,7 +139,7 @@ def train(args, data_mode='ssl', folder_paths: list = None):
 
 if __name__ == '__main__':
     # data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
-    data_path = '/workspace/quan/motor'
+    data_path = args.folder_path
     folder_paths = [os.path.join(data_path, x) for x in ('test', 'train', 'val')]
     print(f"==>> folder_paths: {folder_paths}")
     train(args, data_mode='ssl', folder_paths=folder_paths)

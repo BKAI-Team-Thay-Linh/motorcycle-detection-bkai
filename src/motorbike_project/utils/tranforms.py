@@ -27,7 +27,7 @@ class Transform:
         else:
             self.aug = A.Compose(
                 [
-                    A.Resize(120, 120, interpolation=cv2.INTER_LINEAR),
+                    A.Resize(112, 112, interpolation=cv2.INTER_LINEAR),
                     A.Normalize(),
                     ToTensorV2()
                 ]

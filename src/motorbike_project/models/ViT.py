@@ -14,7 +14,7 @@ class VisionTransformer(nn.Module):
         print(f"==>> self.model: {self.model}")
 
     def forward(self, x):
-        return self.model(x)
+        return self.model(x).logits
 
 
 if __name__ == '__main__':

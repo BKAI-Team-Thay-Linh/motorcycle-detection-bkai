@@ -9,7 +9,7 @@ class VisionTransformer(nn.Module):
     def __init__(self, num_classes: int = 3):
         super(VisionTransformer, self).__init__()
 
-        self.model = AutoModelForImageClassification.from_pretrained("WinKawaks/vit-tiny-patch16-224")
+        self.model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224")
         self.model.classifier = nn.Linear(192, num_classes)
         print(f"==>> self.model: {self.model}")
 

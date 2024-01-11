@@ -54,25 +54,11 @@ def train(args, data_mode='ssl', folder_paths: list = None):
     print(f'Current working directory: {os.getcwd()}')
 
     # Dataset
-    train_dataset = mp.MotorBikeDataset(
+    train_dataset, val_dataset = mp.MotorBikeDataset(
         config_path='src/motorbike_project/config',
-        session='train',
         data_mode=data_mode,
-        folder_paths=folder_paths
-    )
-
-    train_dataset, val_dataset = random_split(
-        dataset=train_dataset,
-        lengths=(0.8, 0.2),
-        generator=torch.Generator().manual_seed(args.seed)  # Set seed for reproducibility
-    )
-
-    test_dataset = mp.MotorBikeDataset(
-        config_path='src/motorbike_project/config',
-        session='test',
-        data_mode=data_mode,
-        folder_paths=folder_paths
-    )
+        folder_paths=folder_paths,
+    ).split_dataset(ratio=0.9)
 
     # DataLoader
     train_loader = DataLoader(
@@ -84,13 +70,6 @@ def train(args, data_mode='ssl', folder_paths: list = None):
 
     val_loader = DataLoader(
         dataset=val_dataset,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        shuffle=False
-    )
-
-    test_loader = DataLoader(
-        dataset=test_dataset,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         shuffle=False
@@ -131,15 +110,12 @@ def train(args, data_mode='ssl', folder_paths: list = None):
     # Fit model
     trainer.fit(model, train_loader, val_loader)
 
-    # Test model
-    trainer.test(model, test_loader)
-
     wandb.finish()
 
 
 if __name__ == '__main__':
-    # data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
-    data_path = args.folder_path
+    data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
+    # data_path = args.folder_path
     folder_paths = [os.path.join(data_path, x) for x in ('test', 'train', 'val')]
     print(f"==>> folder_paths: {folder_paths}")
     train(args, data_mode='ssl', folder_paths=folder_paths)

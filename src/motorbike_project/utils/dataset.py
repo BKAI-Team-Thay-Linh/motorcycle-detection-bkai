@@ -10,7 +10,7 @@ import motorbike_project as mp
 
 
 class MotorBikeDataset(Dataset):
-    def __init__(self, config_path: str, session: str = 'train', data_mode: str = 'ssl', **kwargs):
+    def __init__(self, config_path: str, session: str = 'train', labels=None, data_mode: str = 'ssl', **kwargs):
         """
             In this class, there are two data mode to choose from:
             - `csv`: You need to provide a folder containing the images, and a csv file containing the labels
@@ -30,14 +30,14 @@ class MotorBikeDataset(Dataset):
                 'folder_paths' (list): The list of folder paths, each folder path is a string to the folder containing the images of a class
         """
 
-        assert session in ['train', 'val', 'test'], 'Invalid session, must be in [train, val, test]'
-
         assert data_mode in ['csv', 'ssl'], 'Invalid data mode, must be in [csv, ssl]'
 
         self.data_mode = data_mode
-        self.session = session
         self.kwargs = kwargs
+        self.session = session
         self.config_path = config_path
+        self.transform = mp.Transform(session=session)
+        self.ratio = kwargs.get('ratio', None)
 
         if not os.path.exists(config_path):
             raise ValueError(f'Config path {config_path} does not exist')
@@ -45,11 +45,43 @@ class MotorBikeDataset(Dataset):
         with open(os.path.join(self.config_path, 'class.json'), 'r') as f:
             self.config_class: dict = json.load(f)
 
-        # Define the image transform
-        self.transform = mp.Transform(session)
-
         # Load the dataset in the folder
-        self.load_dataset()
+        if not labels:
+            self.load_dataset()
+        else:
+            self.labels = labels
+
+    def split_dataset(self, ratio: float = 0.8):
+        """
+            Split the dataset into train and val
+        """
+        img_paths = list(self.labels.keys())
+
+        # Shuffle the dataset
+        np.random.shuffle(img_paths)
+
+        # Split the dataset
+        train_img_paths = img_paths[:int(ratio * len(img_paths))]
+        val_img_paths = img_paths[int(ratio * len(img_paths)):]
+
+        # Create the dataset
+        train_dataset = MotorBikeDataset(
+            config_path=self.config_path,
+            session='train',
+            labels={k: self.labels[k] for k in train_img_paths},
+            data_mode=self.data_mode,
+            **self.kwargs
+        )
+
+        val_dataset = MotorBikeDataset(
+            config_path=self.config_path,
+            session='val',
+            labels={k: self.labels[k] for k in val_img_paths},
+            data_mode=self.data_mode,
+            **self.kwargs
+        )
+
+        return train_dataset, val_dataset
 
     def load_dataset(self):
         if self.data_mode == 'csv':
@@ -125,23 +157,22 @@ class MotorBikeDataset(Dataset):
         img = Image.open(img_path).convert('RGB')
 
         if self.transform is not None:
-            # Convert the image to numpy array
             img_np = np.array(img)
-
             img = self.transform(img_np)
 
         return img, label
 
 
 if __name__ == '__main__':
-    train_dataset = MotorBikeDataset(
+    train_dataset, val_dataset = MotorBikeDataset(
         config_path=r'C:\Users\QUANPC\Documents\GitHub\Motocycle-Detection-BKAI\src\motorbike_project\config',
         session='train',
-        data_mode='csv',
-        folder_path=r'D:\Data Deep Learning\FINAL-DATASET\final_dataset',
-        csv_path=r'D:\Data Deep Learning\FINAL-DATASET\result.csv'
-    )
+        data_mode='ssl',
+        folder_paths=["D:\\Data Deep Learning\\datamotor\\motor\\motor\\" + x for x in ('train', 'test', 'val')]
+        # folder_path=r'D:\Data Deep Learning\FINAL-DATASET\final_dataset',
+        # csv_path=r'D:\Data Deep Learning\FINAL-DATASET\result.csv'
+    ).split_dataset(ratio=0.8)
 
     # print(train_dataset._read_csv(r'D:\Data Deep Learning\FINAL-DATASET\result.csv'))
 
-    print(train_dataset[0])
+    print(train_dataset[0], val_dataset[0])

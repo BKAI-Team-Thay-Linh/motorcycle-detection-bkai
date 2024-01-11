@@ -4,6 +4,7 @@ from PIL import Image
 from torchvision import transforms as T
 from torch.utils.data import Dataset
 import numpy as np
+import polars as pl
 
 import motorbike_project as mp
 
@@ -38,8 +39,6 @@ class MotorBikeDataset(Dataset):
         self.kwargs = kwargs
         self.config_path = config_path
 
-        self.labels = {}
-
         if not os.path.exists(config_path):
             raise ValueError(f'Config path {config_path} does not exist')
 
@@ -54,19 +53,67 @@ class MotorBikeDataset(Dataset):
 
     def load_dataset(self):
         if self.data_mode == 'csv':
-            # TODO: Load the dataset from and match the label from the csv file
-            pass
+            self._csv_mode()
         else:
-            self.folder_paths = self.kwargs.get('folder_paths', None)
+            self._ssl_mode()
 
-            # 1 folder is "xe_so", 2 folder is "xe_ga", 3, 4, 5 folder is "others"
-            self.classes = os.listdir(self.folder_paths[0])
+    def __read_csv(self, csv_path: str) -> dict:
+        if not os.path.exists(csv_path):
+            raise ValueError(f'CSV path {csv_path} does not exist')
 
-            for folder in self.folder_paths:
-                for folder_class in self.classes:
-                    for img in os.listdir(os.path.join(folder, folder_class)):
-                        img_path = os.path.join(folder, folder_class, img)
-                        self.labels[img_path] = int(folder_class) - 1 if folder_class in ('1', '2') else 2
+        df = pl.read_csv(csv_path, infer_schema_length=0)
+        mapping_output = {}
+
+        rows = df.rows(named=True)
+
+        for row in rows:
+            if row['imagename'] not in mapping_output:
+                mapping_output[row['imagename']] = row['answer']
+
+        return mapping_output
+
+    def _csv_mode(self):
+        folder_path = self.kwargs.get('folder_path', None)
+        csv_path = self.kwargs.get('csv_path', None)
+
+        if not os.path.exists(folder_path):
+            raise ValueError(f'Folder path {folder_path} does not exist')
+        if not os.path.exists(csv_path):
+            raise ValueError(f'CSV path {csv_path} does not exist')
+
+        # Read the csv file and get the mapping
+        self.labels = {}
+        self.mapping_result = self.__read_csv(csv_path)
+        count = 0
+
+        for img in os.listdir(folder_path):
+            folder, idx, _ = img.split('_')
+            img_name = f'{folder}_image_{idx}.jpg'
+            img_path = os.path.join(folder_path, img)
+
+            if img_name not in self.mapping_result:
+                with open('log.txt', 'a') as f:
+                    f.write(f'Image {img} ---> {img_name} does not exist in the csv file\n')
+                print(f'Image {img} ---> {img_name} does not exist in the csv file')
+                count += 1
+                continue
+
+        self.labels[img_path] = int(self.mapping_result[img_name]) if self.mapping_result[img_name] in ('0', '1') else 2
+
+        print(f'Number of images not in the csv file: {count}')
+
+    def _ssl_mode(self):
+        self.folder_paths = self.kwargs.get('folder_paths', None)
+        self.labels = {}
+
+        # 1 folder is "xe_so", 2 folder is "xe_ga", 3, 4, 5 folder is "others"
+        self.classes = os.listdir(self.folder_paths[0])
+
+        for folder in self.folder_paths:
+            for folder_class in self.classes:
+                for img in os.listdir(os.path.join(folder, folder_class)):
+                    img_path = os.path.join(folder, folder_class, img)
+                    self.labels[img_path] = int(folder_class) - 1 if folder_class in ('1', '2') else 2
 
     def __len__(self):
         return len(self.labels)
@@ -84,3 +131,17 @@ class MotorBikeDataset(Dataset):
             img = self.transform(img_np)
 
         return img, label
+
+
+if __name__ == '__main__':
+    train_dataset = MotorBikeDataset(
+        config_path=r'C:\Users\QUANPC\Documents\GitHub\Motocycle-Detection-BKAI\src\motorbike_project\config',
+        session='train',
+        data_mode='csv',
+        folder_path=r'D:\Data Deep Learning\FINAL-DATASET\final_dataset',
+        csv_path=r'D:\Data Deep Learning\FINAL-DATASET\result.csv'
+    )
+
+    # print(train_dataset._read_csv(r'D:\Data Deep Learning\FINAL-DATASET\result.csv'))
+
+    print(train_dataset[0])

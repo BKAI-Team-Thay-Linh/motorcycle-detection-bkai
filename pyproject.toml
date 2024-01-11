@@ -15,7 +15,8 @@ dependencies = [
     "torchsummary",
     "mediapipe",
     "cvzone",
-    "albumentations"
+    "albumentations",
+    "polars",
 ]
 
 [project.optional-dependencies]

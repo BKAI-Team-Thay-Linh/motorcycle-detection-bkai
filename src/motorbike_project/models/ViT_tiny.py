@@ -5,12 +5,12 @@ import torch.nn as nn
 from transformers import AutoModelForImageClassification
 
 
-class VisionTransformerBase(nn.Module):
+class VisionTransformerTiny(nn.Module):
     def __init__(self, num_classes: int = 3):
-        super(VisionTransformerBase, self).__init__()
+        super(VisionTransformerTiny, self).__init__()
 
-        self.model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224")
-        self.model.classifier = nn.Linear(768, num_classes)
+        self.model = AutoModelForImageClassification.from_pretrained("WinKawaks/vit-tiny-patch16-224")
+        self.model.classifier = nn.Linear(192, num_classes)
         # print(f"==>> self.model: {self.model}")
 
     def forward(self, x):
@@ -18,7 +18,7 @@ class VisionTransformerBase(nn.Module):
 
 
 if __name__ == '__main__':
-    model = VisionTransformerBase()
+    model = VisionTransformerTiny()
     x = torch.randn(1, 3, 224, 224)
     y = model(x)
     print(y.logits)

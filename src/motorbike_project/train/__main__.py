@@ -31,6 +31,8 @@ parser.add_argument('--wandb', '-w', default=False, action='store_true',
                     help='use wandb or not')
 parser.add_argument('--wandb_key', '-wk', type=str,
                     help='wandb API key')
+parser.add_argument('--ratio', '-r', type=float, default=0.9, help='ratio of train set')
+
 args = parser.parse_args()
 
 
@@ -58,7 +60,7 @@ def train(args, data_mode='ssl', folder_paths: list = None):
         config_path='src/motorbike_project/config',
         data_mode=data_mode,
         folder_paths=folder_paths,
-    ).split_dataset(ratio=0.9)
+    ).split_dataset(ratio=args.ratio)
 
     # DataLoader
     train_loader = DataLoader(

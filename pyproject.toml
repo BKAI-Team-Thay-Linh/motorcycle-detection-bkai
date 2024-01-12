@@ -17,6 +17,7 @@ dependencies = [
     "cvzone",
     "albumentations",
     "polars",
+    "transformers",
 ]
 
 [project.optional-dependencies]

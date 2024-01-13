@@ -48,7 +48,7 @@ def train(args):
         wandb.login(key=args.wandb_key)
         name = f"{model_name}-{args.max_epochs}-{args.batch_size}-{args.lr}"
         logger = WandbLogger(
-            project='BKAI-mortobike',
+            project='BKAI-motorbike',
             name=name,
             log_model='all'  # Log model checkpoint at the end of training
         )

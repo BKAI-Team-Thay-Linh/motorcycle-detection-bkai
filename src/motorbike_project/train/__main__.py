@@ -113,8 +113,6 @@ def train(args):
 
     lr_callback = LearningRateMonitor(logging_interval='step')
 
-    # Learning Rate Scheduler
-    lr_scheduler = StepLR(optimizer=model.optimizer, step_size=10, gamma=0.1)
 
     # Trainer
     trainer = pl.Trainer(
@@ -127,7 +125,6 @@ def train(args):
         deterministic=True,             # Reproducibility
         log_every_n_steps=1,            # Log every 1 step
         precision=16,                   # Use mixed precision
-        lr_scheduler=lr_scheduler        # Learning rate scheduler
     )
 
     # Fit model

@@ -2,20 +2,26 @@ import motorbike_project as mp
 import torch.nn as nn
 import torch
 import pytorch_lightning as pl
+import pandas as pd
 
-from sklearn.metrics import f1_score, accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.utils import class_weight
 
 
 class MotorBikeModel(pl.LightningModule):
-    def __init__(self, model: str = 'resnet152', num_classes: int = 3, lr: float = 1e-4):
+    def __init__(self, labels_csv_path: str, model: str = 'resnet152', num_classes: int = 3, lr: float = 1e-4):
         super().__init__()
 
-        if model == 'resnet152':
-            self.model = mp.ResNet152(num_classes=num_classes)
+        if model == 'resnet50':
+            self.model = mp.ResNet50(num_classes=num_classes)
         elif model == 'vit':
             self.model = mp.VisionTransformerBase(num_classes=num_classes)
         elif model == 'vit_tiny':
             self.model = mp.VisionTransformerTiny(num_classes=num_classes)
+        elif model == 'swinv2_base':
+            self.model = mp.SwinV2Base(num_classes=num_classes)
+        elif model == 'mobilenetv3_large':
+            self.model = mp.MobileNetV3Large(num_classes=num_classes)
 
         # TODO: Add more models here if you want
 
@@ -28,8 +34,20 @@ class MotorBikeModel(pl.LightningModule):
         self.train_f1 = mp.RunningMean()
         self.val_f1 = mp.RunningMean()
 
-        self.loss = nn.CrossEntropyLoss()
+        self.loss = nn.CrossEntropyLoss(
+            weight=self._create_class_weight(labels_csv_path=labels_csv_path)
+        )
         self.lr = lr
+
+    def _create_class_weight(self, labels_csv_path: str):
+        """
+            Create class weight for the loss function
+        """
+
+        df = pd.read_csv(labels_csv_path)
+        df.loc[df['answer'] > 2, 'answer'] = 2
+        class_weights = class_weight.compute_class_weight('balanced', classes=df['answer'].unique(), y=df['answer'])
+        return torch.tensor(class_weights, dtype=torch.float32)
 
     def forward(self, x):
         return self.model(x)

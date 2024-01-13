@@ -1,4 +1,6 @@
 from .model import *
-from .resnet152 import *
+from .resnet50 import *
 from .ViT import *
 from .ViT_tiny import *
+from .swinv2_base import *
+from .mobilenetv3_large import *

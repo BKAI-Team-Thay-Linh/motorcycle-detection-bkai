@@ -6,11 +6,13 @@ from torch.utils.data import Dataset
 import numpy as np
 import polars as pl
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import motorbike_project as mp
 
 
 class MotorBikeDataset(Dataset):
-    def __init__(self, config_path: str, session: str = 'train', labels=None, data_mode: str = 'ssl', **kwargs):
+    def __init__(self, config_path: str, session: str = 'train', labels_csv_path: str = '', folder_path: str = ''):
         """
             In this class, there are two data mode to choose from:
             - `csv`: You need to provide a folder containing the images, and a csv file containing the labels
@@ -20,24 +22,16 @@ class MotorBikeDataset(Dataset):
         Args:
             `config_path` (str): The path to the config file
             `session` (str, optional): The session of the dataset, must be in [`train`, `val`, `test`]
-            `data_mode` (str, optional): The data mode. Defaults to `csv`.
-            `kwargs`: Other arguments:
+            `labels_csv_path` (str, optional): The path to the csv file containing the labels
+            `folder_path` (str, optional): The path to the folder containing the images
 
-            - For `csv` mode:
-                `folder_path` (str): The folder containing the images
-                `csv_path` (str): The csv file containing the labels
-            - For `ssl` mode:
-                'folder_paths' (list): The list of folder paths, each folder path is a string to the folder containing the images of a class
         """
 
-        assert data_mode in ['csv', 'ssl'], 'Invalid data mode, must be in [csv, ssl]'
-
-        self.data_mode = data_mode
-        self.kwargs = kwargs
         self.session = session
         self.config_path = config_path
         self.transform = mp.Transform(session=session)
-        self.ratio = kwargs.get('ratio', None)
+        self.labels_csv_path = labels_csv_path
+        self.folder_path = folder_path
 
         if not os.path.exists(config_path):
             raise ValueError(f'Config path {config_path} does not exist')
@@ -45,107 +39,38 @@ class MotorBikeDataset(Dataset):
         with open(os.path.join(self.config_path, 'class.json'), 'r') as f:
             self.config_class: dict = json.load(f)
 
-        # Load the dataset in the folder
-        if not labels:
-            self.load_dataset()
-        else:
-            self.labels = labels
-
-    def split_dataset(self, ratio: float = 0.8):
-        """
-            Split the dataset into train and val
-        """
-        img_paths = list(self.labels.keys())
-
-        # Shuffle the dataset
-        np.random.shuffle(img_paths)
-
-        # Split the dataset
-        train_img_paths = img_paths[:int(ratio * len(img_paths))]
-        val_img_paths = img_paths[int(ratio * len(img_paths)):]
-
-        # Create the dataset
-        train_dataset = MotorBikeDataset(
-            config_path=self.config_path,
-            session='train',
-            labels={k: self.labels[k] for k in train_img_paths},
-            data_mode=self.data_mode,
-            **self.kwargs
-        )
-
-        val_dataset = MotorBikeDataset(
-            config_path=self.config_path,
-            session='val',
-            labels={k: self.labels[k] for k in val_img_paths},
-            data_mode=self.data_mode,
-            **self.kwargs
-        )
-
-        return train_dataset, val_dataset
+        self.load_dataset()
 
     def load_dataset(self):
-        if self.data_mode == 'csv':
-            self._csv_mode()
+        self.labels = {}
+
+        if self.session == 'train':
+            img_path = os.path.join(self.folder_path, 'train', 'images')
+        elif self.session == 'val':
+            img_path = os.path.join(self.folder_path, 'valid', 'images')
         else:
-            self._ssl_mode()
+            img_path = os.path.join(self.folder_path, 'test', 'images')
 
-    def __read_csv(self, csv_path: str) -> dict:
-        if not os.path.exists(csv_path):
-            raise ValueError(f'CSV path {csv_path} does not exist')
+        # Read the csv file
+        labels = pl.read_csv(self.labels_csv_path).to_pandas()
+        dirs = os.listdir(img_path)
+        futures = {}
 
-        df = pl.read_csv(csv_path, infer_schema_length=0)
-        mapping_output = {}
+        def get_label(img):
+            # 2 is the max label, others will be downsampled to 2
+            label = min(labels[labels['imagename'] == img]['answer'].values[0], 2)
+            return label
 
-        rows = df.rows(named=True)
+        with ThreadPoolExecutor(max_workers=30) as executor:
+            print('Start processing images')
+            for idx, img in enumerate(dirs):
+                print(f'{idx:>6}|{len(dirs):<6} - Processing {img}', end='\r')
+                futures[executor.submit(get_label, img)] = img
 
-        for row in rows:
-            if row['imagename'] not in mapping_output:
-                mapping_output[row['imagename']] = row['answer']
-
-        return mapping_output
-
-    def _csv_mode(self):
-        folder_path = self.kwargs.get('folder_path', None)
-        csv_path = self.kwargs.get('csv_path', None)
-
-        if not os.path.exists(folder_path):
-            raise ValueError(f'Folder path {folder_path} does not exist')
-        if not os.path.exists(csv_path):
-            raise ValueError(f'CSV path {csv_path} does not exist')
-
-        # Read the csv file and get the mapping
-        self.labels = {}
-        self.mapping_result = self.__read_csv(csv_path)
-        count = 0
-
-        for img in os.listdir(folder_path):
-            folder, idx, _ = img.split('_')
-            img_name = f'{folder}_image_{idx}.jpg'
-            img_path = os.path.join(folder_path, img)
-
-            if img_name not in self.mapping_result:
-                with open('log.txt', 'a') as f:
-                    f.write(f'Image {img} ---> {img_name} does not exist in the csv file\n')
-                print(f'Image {img} ---> {img_name} does not exist in the csv file')
-                count += 1
-                continue
-
-        self.labels[img_path] = int(self.mapping_result[img_name]) if self.mapping_result[img_name] in ('0', '1') else 2
-
-        print(f'Number of images not in the csv file: {count}')
-
-    def _ssl_mode(self):
-        self.folder_paths = self.kwargs.get('folder_paths', None)
-        self.labels = {}
-
-        # 1 folder is "xe_so", 2 folder is "xe_ga", 3, 4, 5 folder is "others"
-        self.classes = os.listdir(self.folder_paths[0])
-
-        for folder in self.folder_paths:
-            for folder_class in self.classes:
-                for img in os.listdir(os.path.join(folder, folder_class)):
-                    img_path = os.path.join(folder, folder_class, img)
-                    self.labels[img_path] = int(folder_class) - 1 if folder_class in ('1', '2') else 2
+            for future in as_completed(futures):
+                label = future.result()
+                img = futures[future]
+                self.labels[os.path.join(img_path, img)] = label
 
     def __len__(self):
         return len(self.labels)
@@ -164,15 +89,11 @@ class MotorBikeDataset(Dataset):
 
 
 if __name__ == '__main__':
-    train_dataset, val_dataset = MotorBikeDataset(
+    train_dataset = MotorBikeDataset(
         config_path=r'C:\Users\QUANPC\Documents\GitHub\Motocycle-Detection-BKAI\src\motorbike_project\config',
         session='train',
-        data_mode='ssl',
-        folder_paths=["D:\\Data Deep Learning\\datamotor\\motor\\motor\\" + x for x in ('train', 'test', 'val')]
-        # folder_path=r'D:\Data Deep Learning\FINAL-DATASET\final_dataset',
-        # csv_path=r'D:\Data Deep Learning\FINAL-DATASET\result.csv'
-    ).split_dataset(ratio=0.8)
+        labels_csv_path=r'D:\Data Deep Learning\FINAL-DATASET\FINAL-DATASET\result.csv',
+        folder_path=r'D:\Data Deep Learning\FINAL-DATASET\FINAL-DATASET\train'
+    )
 
-    # print(train_dataset._read_csv(r'D:\Data Deep Learning\FINAL-DATASET\result.csv'))
-
-    print(train_dataset[0], val_dataset[0])
+    print(train_dataset[0])

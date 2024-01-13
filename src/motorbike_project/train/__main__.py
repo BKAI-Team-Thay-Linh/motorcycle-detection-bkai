@@ -1,7 +1,8 @@
 import os
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import StepLR
 
 import motorbike_project as mp
 import torch
@@ -11,14 +12,16 @@ import argparse
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', type=str, default='resnet152',
+parser.add_argument('--model', type=str, default='resnet50',
                     help='model name')
 parser.add_argument('--name', type=str, default=None,
                     help='name of the experiment')
 parser.add_argument('--max_epochs', '-me', type=int, default=20,
                     help='max epoch')
-parser.add_argument('--folder_path', '-fp', type=str, default='/workspace/quan/motor',
+parser.add_argument('--folder_path', '-fp', type=str, default='',
                     help='folder path')
+parser.add_argument('--csv_path', '-csv', type=str, default='',
+                    help='The path to the csv file containing the labels')
 parser.add_argument('--batch_size', '-bs', type=int, default=64,
                     help='batch size')
 parser.add_argument('--lr', '-l', type=float, default=1e-4,
@@ -31,12 +34,12 @@ parser.add_argument('--wandb', '-w', default=False, action='store_true',
                     help='use wandb or not')
 parser.add_argument('--wandb_key', '-wk', type=str,
                     help='wandb API key')
-parser.add_argument('--ratio', '-r', type=float, default=0.9, help='ratio of train set')
+
 
 args = parser.parse_args()
 
 
-def train(args, data_mode='ssl', folder_paths: list = None):
+def train(args):
     model_name = args.model
     pl.seed_everything(args.seed, workers=True)
 
@@ -56,11 +59,19 @@ def train(args, data_mode='ssl', folder_paths: list = None):
     print(f'Current working directory: {os.getcwd()}')
 
     # Dataset
-    train_dataset, val_dataset = mp.MotorBikeDataset(
+    train_dataset = mp.MotorBikeDataset(
         config_path='src/motorbike_project/config',
-        data_mode=data_mode,
-        folder_paths=folder_paths,
-    ).split_dataset(ratio=args.ratio)
+        session='train',
+        labels_csv_path=args.csv_path,
+        folder_path=args.folder_path
+    )
+
+    val_dataset = mp.MotorBikeDataset(
+        config_path='src/motorbike_project/config',
+        session='val',
+        labels_csv_path=args.csv_path,
+        folder_path=args.folder_path
+    )
 
     # DataLoader
     train_loader = DataLoader(
@@ -78,7 +89,12 @@ def train(args, data_mode='ssl', folder_paths: list = None):
     )
 
     # Model
-    model = mp.MotorBikeModel(model=model_name, num_classes=3, lr=args.lr)
+    model = mp.MotorBikeModel(
+        model=model_name,
+        labels_csv_path=args.csv_path,
+        num_classes=3,
+        lr=args.lr
+    )
 
     # Callbacks
     root_path = os.path.join('checkpoints', model_name)
@@ -97,6 +113,9 @@ def train(args, data_mode='ssl', folder_paths: list = None):
 
     lr_callback = LearningRateMonitor(logging_interval='step')
 
+    # Learning Rate Scheduler
+    lr_scheduler = StepLR(optimizer=model.optimizer, step_size=10, gamma=0.1)
+
     # Trainer
     trainer = pl.Trainer(
         default_root_dir=root_path,
@@ -108,6 +127,7 @@ def train(args, data_mode='ssl', folder_paths: list = None):
         deterministic=True,             # Reproducibility
         log_every_n_steps=1,            # Log every 1 step
         precision=16,                   # Use mixed precision
+        lr_scheduler=lr_scheduler        # Learning rate scheduler
     )
 
     # Fit model
@@ -117,8 +137,4 @@ def train(args, data_mode='ssl', folder_paths: list = None):
 
 
 if __name__ == '__main__':
-    # data_path = r'D:\Data Deep Learning\datamotor\motor\motor'
-    data_path = args.folder_path
-    folder_paths = [os.path.join(data_path, x) for x in ('test', 'train', 'val')]
-    print(f"==>> folder_paths: {folder_paths}")
-    train(args, data_mode='ssl', folder_paths=folder_paths)
+    train(args)

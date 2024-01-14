@@ -58,7 +58,7 @@ class MotorBikeDataset(Dataset):
 
         # Read the csv file
         labels = pl.read_csv(self.labels_csv_path).to_pandas()
-        dirs = os.listdir(img_path)
+        dirs = tuple(os.listdir(img_path))
         futures = {}
 
         with ProcessPoolExecutor(max_workers=30) as executor:
@@ -70,7 +70,7 @@ class MotorBikeDataset(Dataset):
             print()
             print('Start getting results')
             print()
-            for idx, future in enumerate(list(as_completed(futures))):
+            for idx, future in enumerate((as_completed(futures))):
                 label = future.result()
                 img = futures[future]
                 print(f'{idx:>6}|{len(dirs):<6} - Processing {img} - {label}', end='\r')

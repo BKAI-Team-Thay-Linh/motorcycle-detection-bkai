@@ -6,8 +6,7 @@ from torch.utils.data import Dataset
 import numpy as np
 import polars as pl
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
-# from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
 import motorbike_project as mp
 
@@ -42,7 +41,7 @@ class MotorBikeDataset(Dataset):
 
         self.load_dataset()
 
-    def _get_label(img, labels):
+    def _get_label(self, img, labels):
         # 2 is the max label, others will be downsampled to 2
         label = min(labels[labels['imagename'] == img]['answer'].values[0], 2)
         return label
@@ -62,7 +61,7 @@ class MotorBikeDataset(Dataset):
         dirs = os.listdir(img_path)
         futures = {}
 
-        with ThreadPoolExecutor(max_workers=50) as executor:
+        with ProcessPoolExecutor(max_workers=20) as executor:
             print('Start processing images')
             for idx, img in enumerate(dirs):
                 print(f'{idx:>6}|{len(dirs):<6} - Submitting {img}', end='\r')

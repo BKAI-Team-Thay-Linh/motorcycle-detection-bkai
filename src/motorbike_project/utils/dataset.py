@@ -65,12 +65,13 @@ class MotorBikeDataset(Dataset):
         with ProcessPoolExecutor(max_workers=30) as executor:
             print('Start processing images')
             for idx, img in enumerate(dirs):
-                print(f'{idx:>6}|{len(dirs):<6} - Processing {img}', end='\r')
+                print(f'{idx:>6}|{len(dirs):<6} - Submitting {img}', end='\r')
                 futures[executor.submit(get_label, img)] = img
 
             for future in as_completed(futures):
                 label = future.result()
                 img = futures[future]
+                print(f'{idx:>6}|{len(dirs):<6} - Processing {img} - {label}', end='\r')
                 self.labels[os.path.join(img_path, img)] = label
 
     def __len__(self):

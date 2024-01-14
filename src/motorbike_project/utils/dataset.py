@@ -61,7 +61,7 @@ class MotorBikeDataset(Dataset):
         dirs = tuple(os.listdir(img_path))
         futures = {}
 
-        with ProcessPoolExecutor(max_workers=30) as executor:
+        with ThreadPoolExecutor(max_workers=100) as executor:
             print('Start processing images')
             for idx, img in enumerate(dirs):
                 print(f'{idx:>6}|{len(dirs):<6} - Submitting {img}', end='\r')

@@ -22,6 +22,8 @@ class MotorBikeModel(pl.LightningModule):
             self.model = mp.SwinV2Base(num_classes=num_classes)
         elif model == 'mobilenetv3_large':
             self.model = mp.MobileNetV3Large(num_classes=num_classes)
+        elif model == 'resnet18':
+            self.model = mp.ResNet18(num_classes=num_classes)
 
         # TODO: Add more models here if you want
 

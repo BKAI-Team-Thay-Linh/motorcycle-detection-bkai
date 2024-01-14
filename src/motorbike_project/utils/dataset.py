@@ -67,8 +67,10 @@ class MotorBikeDataset(Dataset):
                 print(f'{idx:>6}|{len(dirs):<6} - Submitting {img}', end='\r')
                 futures[executor.submit(self._get_label, img, labels)] = img
 
+            print()
             print('Start getting results')
-            for future in as_completed(futures):
+            print()
+            for idx, future in enumerate(list(as_completed(futures))):
                 label = future.result()
                 img = futures[future]
                 print(f'{idx:>6}|{len(dirs):<6} - Processing {img} - {label}', end='\r')

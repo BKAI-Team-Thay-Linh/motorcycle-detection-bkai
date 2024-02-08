@@ -45,7 +45,7 @@ class MotorBikeDataset(Dataset):
         # 2 is the max label, others will be downsampled to 2
         # label = min(labels[labels['imagename'] == img]['answer'].values[0], 2)
 
-        # 5 is the max label, others will be downsampled to 5
+        # 5 is the max label, others will be downsampled to
         label = min(labels[labels['imagename'] == img]['answer'].values[0], 5)
         return label
 

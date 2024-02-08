@@ -9,7 +9,7 @@ from sklearn.utils import class_weight
 
 
 class MotorBikeModel(pl.LightningModule):
-    def __init__(self, labels_csv_path: str, model: str = 'resnet152', num_classes: int = 3, lr: float = 1e-4):
+    def __init__(self, labels_csv_path: str, model: str = 'resnet18', num_classes: int = 5, lr: float = 1e-4):
         super().__init__()
 
         if model == 'resnet50':
@@ -47,7 +47,7 @@ class MotorBikeModel(pl.LightningModule):
         """
 
         df = pd.read_csv(labels_csv_path)
-        df.loc[df['answer'] > 2, 'answer'] = 2
+        # df.loc[df['answer'] > 2, 'answer'] = 2
         class_weights = class_weight.compute_class_weight('balanced', classes=df['answer'].unique(), y=df['answer'])
         return torch.tensor(class_weights, dtype=torch.float32)
 

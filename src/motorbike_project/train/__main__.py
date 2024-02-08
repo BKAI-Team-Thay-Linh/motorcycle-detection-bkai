@@ -107,12 +107,11 @@ def train(args):
         monitor='val_loss',
         dirpath=ckpt_path,
         filename=f'{model_name}',
-        save_top_k=3,
+        save_top_k=1,
         mode='min'
-    )  # Save top 3 best models with lowest val_loss
+    )  # Save top 1 best models with lowest val_loss
 
     lr_callback = LearningRateMonitor(logging_interval='step')
-
 
     # Trainer
     trainer = pl.Trainer(

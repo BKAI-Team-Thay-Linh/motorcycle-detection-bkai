@@ -12,7 +12,7 @@ import argparse
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', type=str, default='resnet50',
+parser.add_argument('--model', type=str, default='resnet18',
                     help='model name')
 parser.add_argument('--name', type=str, default=None,
                     help='name of the experiment')
@@ -48,7 +48,7 @@ def train(args):
         wandb.login(key=args.wandb_key)
         name = f"{model_name}-{args.max_epochs}-{args.batch_size}-{args.lr}"
         logger = WandbLogger(
-            project='BKAI-motorbike',
+            project='BKAI-Motorbike-5-Classes',
             name=name,
             log_model='all'  # Log model checkpoint at the end of training
         )
@@ -92,7 +92,7 @@ def train(args):
     model = mp.MotorBikeModel(
         model=model_name,
         labels_csv_path=args.csv_path,
-        num_classes=3,
+        num_classes=5,
         lr=args.lr
     )
 

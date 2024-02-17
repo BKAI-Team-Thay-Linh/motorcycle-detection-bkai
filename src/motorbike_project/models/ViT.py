@@ -6,7 +6,7 @@ from transformers import AutoModelForImageClassification
 
 
 class VisionTransformerBase(nn.Module):
-    def __init__(self, num_classes: int = 3):
+    def __init__(self, num_classes: int = 5):
         super(VisionTransformerBase, self).__init__()
 
         self.model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224")

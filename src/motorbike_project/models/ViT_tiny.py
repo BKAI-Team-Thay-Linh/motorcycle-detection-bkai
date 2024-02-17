@@ -6,7 +6,7 @@ from transformers import AutoModelForImageClassification
 
 
 class VisionTransformerTiny(nn.Module):
-    def __init__(self, num_classes: int = 3):
+    def __init__(self, num_classes: int = 5):
         super(VisionTransformerTiny, self).__init__()
 
         self.model = AutoModelForImageClassification.from_pretrained("WinKawaks/vit-tiny-patch16-224")
@@ -21,4 +21,4 @@ if __name__ == '__main__':
     model = VisionTransformerTiny()
     x = torch.randn(1, 3, 224, 224)
     y = model(x)
-    print(y.logits)
+    print(y)

@@ -4,7 +4,7 @@ import torch
 
 
 class SwinV2Base(nn.Module):
-    def __init__(self, num_classes: int = 3):
+    def __init__(self, num_classes: int = 5):
         super().__init__()
         self.swin_v2_b = swin_v2_b(pretrained=True)  # Weights here are pretrained on ImageNet
         self.swin_v2_b.head = nn.Linear(1024, num_classes)

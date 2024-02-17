@@ -4,7 +4,7 @@ from torchvision.models import mobilenet_v3_large
 
 
 class MobileNetV3Large(nn.Module):
-    def __init__(self, num_classes: int = 3):
+    def __init__(self, num_classes: int = 5):
         super().__init__()
         self.mobilenet_v3_large = mobilenet_v3_large(pretrained=True)  # Weights here are pretrained on ImageNet
         self.mobilenet_v3_large.classifier = nn.Linear(960, num_classes)

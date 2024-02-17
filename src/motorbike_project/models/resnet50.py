@@ -4,7 +4,7 @@ from torchvision.models import resnet50
 
 
 class ResNet50(nn.Module):
-    def __init__(self, num_classes: int = 3):
+    def __init__(self, num_classes: int = 5):
         super().__init__()
         self.resnet50 = resnet50(pretrained=True)  # Weights here are pretrained on ImageNet
         self.resnet50.fc = nn.Linear(2048, num_classes)

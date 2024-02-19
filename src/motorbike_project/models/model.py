@@ -4,12 +4,21 @@ import torch
 import pytorch_lightning as pl
 import pandas as pd
 
+from PIL import Image
 from sklearn.metrics import f1_score
 from sklearn.utils import class_weight
+import numpy as np
 
 
 class MotorBikeModel(pl.LightningModule):
-    def __init__(self, labels_csv_path: str, model: str = 'resnet18', num_classes: int = 5, lr: float = 1e-4):
+    def __init__(self, 
+                 mode: str = 'train', 
+                 labels_csv_path: str = None, 
+                 model: str = 'resnet18', 
+                 num_classes: int = 5, 
+                 lr: float = 1e-4,
+                 weight_path: str = None
+                 ):
         super().__init__()
 
         if model == 'resnet50':
@@ -27,19 +36,22 @@ class MotorBikeModel(pl.LightningModule):
 
         # TODO: Add more models here if you want
 
-        self.train_loss = mp.RunningMean()
-        self.val_loss = mp.RunningMean()
+        if mode == 'train':
+            self.train_loss = mp.RunningMean()
+            self.val_loss = mp.RunningMean()
 
-        self.train_acc = mp.RunningMean()
-        self.val_acc = mp.RunningMean()
+            self.train_acc = mp.RunningMean()
+            self.val_acc = mp.RunningMean()
 
-        self.train_f1 = mp.RunningMean()
-        self.val_f1 = mp.RunningMean()
+            self.train_f1 = mp.RunningMean()
+            self.val_f1 = mp.RunningMean()
 
-        self.loss = nn.CrossEntropyLoss(
-            weight=self._create_class_weight(labels_csv_path=labels_csv_path)
-        )
-        self.lr = lr
+            self.loss = nn.CrossEntropyLoss(
+                weight=self._create_class_weight(labels_csv_path=labels_csv_path)
+            )
+            self.lr = lr
+        elif mode == 'infer':
+            self.load_weight(weight_path=weight_path)
 
     def _create_class_weight(self, labels_csv_path: str):
         """
@@ -53,6 +65,21 @@ class MotorBikeModel(pl.LightningModule):
 
     def forward(self, x):
         return self.model(x)
+    
+    def load_weigth(self, weight_path: str):
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        checkpoint = torch.load(self.weight_path, map_location=device)
+        self.load_state_dict(checkpoint['state_dict'], strict=False)
+    
+    def infer(self, image: Image):
+        img_np = np.array(image.convert('RGB'))
+        img = mp.Transform()(img_np)
+        
+        self.eval()
+        with torch.no_grad():
+            y_hat = self(img.unsqueeze(0))
+        
+        return torch.argmax(y_hat, dim=1).item()
 
     def _cal_loss_and_acc(self, batch):
         """

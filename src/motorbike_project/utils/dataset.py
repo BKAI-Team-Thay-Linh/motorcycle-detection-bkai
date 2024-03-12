@@ -12,7 +12,7 @@ import motorbike_project as mp
 
 
 class MotorBikeDataset(Dataset):
-    def __init__(self, config_path: str, session: str = 'train', labels_csv_path: str = '', folder_path: str = ''):
+    def __init__(self, session: str = 'train', folder_path: str = ''):
         """
             In this class, there are two data mode to choose from:
             - `csv`: You need to provide a folder containing the images, and a csv file containing the labels
@@ -22,59 +22,53 @@ class MotorBikeDataset(Dataset):
         Args:
             `config_path` (str): The path to the config file
             `session` (str, optional): The session of the dataset, must be in [`train`, `val`, `test`]
-            `labels_csv_path` (str, optional): The path to the csv file containing the labels
-            `folder_path` (str, optional): The path to the folder containing the images
+            `folder_path` (str, optional): The path to the folder containing the images. Hence the label is in folder "labels"
 
         """
 
         self.session = session
-        self.config_path = config_path
         self.transform = mp.Transform(session=session)
-        self.labels_csv_path = labels_csv_path
         self.folder_path = folder_path
-
-        if not os.path.exists(config_path):
-            raise ValueError(f'Config path {config_path} does not exist')
-
-        with open(os.path.join(self.config_path, 'class.json'), 'r') as f:
-            self.config_class: dict = json.load(f)
-
         self.load_dataset()
 
-    def _get_label(self, img, labels):
-        # 2 is the max label, others will be downsampled to 2
-        label = min(labels[labels['imagename'] == img]['answer'].values[0], 2)
+    def _get_label(self, img, label_dir):
+        # Read the label
+        name = img.split('.')[0]
+        with open(os.path.join(label_dir, f'{name}.txt'), 'r') as f:
+            label = int(f.read())
         return label
 
     def load_dataset(self):
         self.labels = {}
 
         if self.session == 'train':
-            img_path = os.path.join(self.folder_path, 'train', 'images')
+            img_dir = os.path.join(self.folder_path, 'train', 'images')
+            label_dir = os.path.join(self.folder_path, 'train', 'labels')
         elif self.session == 'val':
-            img_path = os.path.join(self.folder_path, 'valid', 'images')
+            img_dir = os.path.join(self.folder_path, 'valid', 'images')
+            label_dir = os.path.join(self.folder_path, 'valid', 'labels')
         else:
-            img_path = os.path.join(self.folder_path, 'test', 'images')
+            img_dir = os.path.join(self.folder_path, 'test', 'images')
+            label_dir = os.path.join(self.folder_path, 'test', 'labels')
 
         # Read the csv file
-        labels = pl.read_csv(self.labels_csv_path).to_pandas()
-        dirs = tuple(os.listdir(img_path))
+        images_path = tuple(os.listdir(img_dir))
+        labels_path = tuple(os.listdir(label_dir))
         futures = {}
 
         with ThreadPoolExecutor(max_workers=100) as executor:
             print('Start processing images')
-            for idx, img in enumerate(dirs):
-                print(f'{idx:>6}|{len(dirs):<6} - Submitting {img}', end='\r')
-                futures[executor.submit(self._get_label, img, labels)] = img
+            for idx, img in enumerate(images_path):
+                print(f'{idx:>6}|{len(images_path):<6} - Submitting {img}', end='\r')
+                futures[executor.submit(self._get_label, img, label_dir)] = img
 
             print()
             print('Start getting results')
-            print()
             for idx, future in enumerate((as_completed(futures))):
                 label = future.result()
                 img = futures[future]
-                print(f'{idx:>6}|{len(dirs):<6} - Processing {img} - {label}', end='\r')
-                self.labels[os.path.join(img_path, img)] = label
+                print(f'{idx:>6}|{len(images_path):<6} - Processing {img} - {label}', end='\r')
+                self.labels[os.path.join(img_dir, img)] = label
 
     def __len__(self):
         return len(self.labels)
@@ -94,10 +88,8 @@ class MotorBikeDataset(Dataset):
 
 if __name__ == '__main__':
     train_dataset = MotorBikeDataset(
-        config_path=r'C:\Users\QUANPC\Documents\GitHub\Motocycle-Detection-BKAI\src\motorbike_project\config',
         session='train',
-        labels_csv_path=r'D:\Data Deep Learning\FINAL-DATASET\FINAL-DATASET\result.csv',
-        folder_path=r'D:\Data Deep Learning\FINAL-DATASET\FINAL-DATASET\train'
+        folder_path='/home/linhdang/workspace/PAPER_Material/FINAL-DATASET/train'
     )
 
     print(train_dataset[0])

@@ -20,8 +20,6 @@ parser.add_argument('--max_epochs', '-me', type=int, default=20,
                     help='max epoch')
 parser.add_argument('--folder_path', '-fp', type=str, default='',
                     help='folder path')
-parser.add_argument('--csv_path', '-csv', type=str, default='',
-                    help='The path to the csv file containing the labels')
 parser.add_argument('--batch_size', '-bs', type=int, default=64,
                     help='batch size')
 parser.add_argument('--lr', '-l', type=float, default=1e-4,
@@ -48,7 +46,7 @@ def train(args):
         wandb.login(key=args.wandb_key)
         name = f"{model_name}-{args.max_epochs}-{args.batch_size}-{args.lr}"
         logger = WandbLogger(
-            project='BKAI-motorbike',
+            project='BKAI-Motorcycle-Paper',
             name=name,
             log_model='all'  # Log model checkpoint at the end of training
         )
@@ -60,16 +58,12 @@ def train(args):
 
     # Dataset
     train_dataset = mp.MotorBikeDataset(
-        config_path='src/motorbike_project/config',
         session='train',
-        labels_csv_path=args.csv_path,
         folder_path=args.folder_path
     )
 
     val_dataset = mp.MotorBikeDataset(
-        config_path='src/motorbike_project/config',
         session='val',
-        labels_csv_path=args.csv_path,
         folder_path=args.folder_path
     )
 
@@ -91,7 +85,7 @@ def train(args):
     # Model
     model = mp.MotorBikeModel(
         model=model_name,
-        labels_csv_path=args.csv_path,
+        labels_csv_path='/home/linhdang/workspace/PAPER_Material/Quan/Motocycle-Detection-BKAI/classes.csv',
         num_classes=3,
         lr=args.lr
     )
@@ -107,7 +101,7 @@ def train(args):
         monitor='val_loss',
         dirpath=ckpt_path,
         filename=f'{model_name}',
-        save_top_k=3,
+        save_top_k=1,
         mode='min'
     )  # Save top 3 best models with lowest val_loss
 

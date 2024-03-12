@@ -9,7 +9,7 @@ from sklearn.utils import class_weight
 
 
 class MotorBikeModel(pl.LightningModule):
-    def __init__(self, labels_csv_path: str, model: str = 'resnet152', num_classes: int = 3, lr: float = 1e-4):
+    def __init__(self, labels_csv_path: str, model: str = 'resnet18', num_classes: int = 3, lr: float = 1e-4):
         super().__init__()
 
         if model == 'resnet50':
@@ -38,7 +38,7 @@ class MotorBikeModel(pl.LightningModule):
 
         self.loss = nn.CrossEntropyLoss(
             weight=self._create_class_weight(labels_csv_path=labels_csv_path)
-        )
+        )       
         self.lr = lr
 
     def _create_class_weight(self, labels_csv_path: str):
